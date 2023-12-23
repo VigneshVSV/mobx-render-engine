@@ -1,0 +1,29 @@
+{
+  "name": "mobx-render-engine",
+  "version": "0.1.0",
+  "description": "react component renderer based on mobx state management",
+  "main": "src/index.tsx",
+  "files": ["src"],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VigneshVSV/mobx-render-engine.git"
+  },
+  "keywords": [
+    "mobx",
+    "renderer"
+  ],
+  "author": "Vignesh Vaidyanathan",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/VigneshVSV/mobx-render-engine/issues"
+  },
+  "homepage": "https://github.com/VigneshVSV/mobx-render-engine#readme",
+  "dependencies": {
+    "@types/react": "^18.2.45",
+    "axios": "^1.6.2",
+    "mobx": "^6.12.0"
+  }
+}
