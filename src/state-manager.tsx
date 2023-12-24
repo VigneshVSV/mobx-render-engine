@@ -5,7 +5,7 @@ import { ComponentData, ComponentState, ComponentStateMap, PlotlyComponentData, 
     PlotlyState, VideoComponentState, PageState } from "../src/state-container"
 import { RemoteFSMMap } from "../src/state-machine"
 import { ACTION, NESTED, ActionsMap, ComponentOutputMap, StubEvaluator, Stub } from "../src/stub-evaluator"
-import { RenderEngine } from "./render-engine"
+import { RenderEngine } from "./index"
 import { Logger } from "./utils/logger"
 import { asyncRequest } from "./utils/http"
 import { sleep, timestamp } from "./utils/misc"

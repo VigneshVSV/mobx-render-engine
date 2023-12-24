@@ -4,3 +4,4 @@ A [`mobx`](https://mobx.js.org/README.html) state management based JSON driven R
 
 Currently works with `hololinked.webdashboard` python package which contains python to JSON logic and `react-mui-mobx-render-engine` containing components from [`React MUI`](https://mui.com/) . Look (...will be filled...) for examples.
 
+This is an npm distributable, not a standalone React app. 

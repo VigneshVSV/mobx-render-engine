@@ -1,21 +1,7 @@
 // Internal & 3rd party functional libraries
-import { merge } from "merge-anything";
 // Custom functional libraries
 // Internal & 3rd party component libraries
 // Custom component libraries
-
-
-export function JSONDeepUpdate(target : any, source : Array<any> | any ) : any {
-    if ( Array.isArray(source) ) {
-        var newTarget = Array(source.length)
-        for (var i=0; i<source.length ; i++ )
-            newTarget[i] = merge(target[i], source[i])
-        return newTarget
-    }
-
-    if ( typeof source === "object" && !Array.isArray(source) && source !== null )
-        return merge(target, source)
-}
 
 export function sleep(ms: any) : Promise<any> {
     return new Promise(resolve => setTimeout(resolve, ms));
