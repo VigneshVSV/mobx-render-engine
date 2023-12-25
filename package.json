@@ -2,12 +2,18 @@
   "name": "mobx-render-engine",
   "version": "0.1.0",
   "description": "react component renderer based on mobx state management",
-  "main": "src/index.tsx",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
-    "src"
+    "dist",
+    "package.json",
+    "README.md",
+    "license.txt"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean-build": "rmdir dist /s && tsc",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -23,11 +29,16 @@
     "url": "https://github.com/VigneshVSV/mobx-render-engine/issues"
   },
   "homepage": "https://github.com/VigneshVSV/mobx-render-engine#readme",
-  "dependencies": {
+  "devDependencies": {
     "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
     "axios": "^1.6.2",
     "idb": "^8.0.0",
     "loglevel": "^1.8.1",
-    "mobx": "^6.12.0"
+    "mobx": "^6.12.0",
+    "mobx-react-lite": "^4.0.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.3.3"
   }
 }

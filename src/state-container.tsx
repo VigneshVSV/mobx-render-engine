@@ -66,6 +66,15 @@ export class ComponentState {
 
     constructor(componentData : ComponentData, stubResolver : any) {
 
+        this.metadata = {}
+        this.children = null
+        this.dynamicChildren = null
+        this.resolveStubInfo = stubResolver
+        if (!componentData.id)
+            throw new Error("component id cannot be null - received component data with null id")
+        else 
+            this.setComponentData(componentData)
+
         makeObservable(this, {           
             props               : observable,
             dynamicProps        : observable,
@@ -79,14 +88,6 @@ export class ComponentState {
             setRGLDataGrid         : action
             // something missing?
         })
-        this.metadata = {}
-        this.children = null
-        this.dynamicChildren = null
-        this.resolveStubInfo = stubResolver
-        if (!componentData.id)
-            throw new Error("component id cannot be null - received component data with null id")
-        else 
-            this.setComponentData(componentData)
     }
 
     
@@ -265,6 +266,8 @@ export class PlotlyState extends ComponentState {
     constructor(componentData : PlotlyComponentData, stubResolver : any) {
         // set componentData is called 
         super(componentData, stubResolver)
+        this.revision = 0
+        this.setComponentData(componentData) // runs super set component data twice
         
         makeObservable(this, {           
             revision             : observable,
@@ -273,12 +276,10 @@ export class PlotlyState extends ComponentState {
             forceUpdate          : override
             // something missing?
         })
-        this.revision = 0
-        this.setComponentData(componentData)
     }
     
     setComponentData(componentData: PlotlyComponentData): void {
-        super.setComponentData(componentData)
+        super.setComponentData(componentData) // runs super set component data twice
         if (componentData.plot) {
             if(!this.plot)
                 this.plot = {
@@ -365,6 +366,9 @@ export class VideoComponentState extends ComponentState {
     constructor(componentData : VideoComponentData, stubResolver : any) {
         // set componentData is called 
         super(componentData, stubResolver)
+        this.img = null
+        this.boxProps = componentData.boxProps 
+        this.setComponentData(componentData) // runs super set component data twice
         
         makeObservable(this, {           
             img      : observable,
@@ -374,9 +378,6 @@ export class VideoComponentState extends ComponentState {
             computedImg : computed         
             // something missing?
         })
-        this.img = null
-        this.boxProps = componentData.boxProps 
-        this.setComponentData(componentData)
     }
     
     setComponentData(componentData : VideoComponentData): void {

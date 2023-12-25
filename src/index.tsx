@@ -34,19 +34,19 @@ export class RenderEngine {
     _lastError : string
 
     constructor(id : string, logger : Logger, stateManager : any, componentStateMap : ComponentStateMap, 
-                    setGlobalLocation : any, errorBoundary : JSX.Element) {
+                    setGlobalLocation : (absolutePath : string) => void, errorBoundary : JSX.Element) {
         this.id = id 
         this.logger = logger
         this.components = {}
         this.stateManager = stateManager
         this.componentStateMap = componentStateMap // called from init from stateManager, component state map is not yet available 
         this.setGlobalLocation = setGlobalLocation
+        this.errorBoundary = errorBoundary
         this._stopRendering = false
         this._lastError = ''
-        this.errorBoundary = errorBoundary
     }
 
-    Component(id : string) : string | number | null | JSX.Element {
+    Component(id : string) : React.ReactNode {
         // debugger
         if(this._stopRendering)
             throw new Error(this._lastError)
@@ -129,6 +129,8 @@ export class RenderEngine {
         )
     }
 }
+
+
 
 
 

@@ -1,12 +1,12 @@
-import axios, { AxiosPromise, AxiosRequestConfig, AxiosResponse } from "axios";
 // Internal & 3rd party functional libraries
+import axios, { AxiosPromise, AxiosRequestConfig, AxiosResponse } from "axios";
 // Custom functional libraries
 import { ComponentData, ComponentState, ComponentStateMap, PlotlyComponentData, VideoComponentData, 
-    PlotlyState, VideoComponentState, PageState } from "../src/state-container"
-import { RemoteFSMMap } from "../src/state-machine"
-import { ACTION, NESTED, ActionsMap, ComponentOutputMap, StubEvaluator, Stub } from "../src/stub-evaluator"
+    PlotlyState, VideoComponentState, PageState } from "./state-container"
+import { RemoteFSMMap } from "./state-machine"
+import { ACTION, NESTED, ActionsMap, ComponentOutputMap, StubEvaluator, Stub } from "./stub-evaluator"
 import { RenderEngine } from "./index"
-import { Logger } from "./utils/logger"
+import { Logger, loglevels } from "./utils/logger"
 import { asyncRequest } from "./utils/http"
 import { sleep, timestamp } from "./utils/misc"
 import { loadCurrentDashboard, openDatabase, storeCurrentDashboard } from "./utils/browser-db";
@@ -19,6 +19,17 @@ function isDynamicObj(data : any) : boolean {
     return false 
 }
 
+
+type Hooks = {
+    setLocation? : (relativePath : string) => void
+    setGlobalLocation? : (absolutePath : string) => void
+}
+
+type ErrorBoundaryProps = {
+    message : string
+    subMessage : string 
+    goBack : (absolutePath : string) => void
+}
 
 
 export class StateManager {
@@ -35,14 +46,14 @@ export class StateManager {
 
     constructor(id : string, logger : Logger, componentStateMap : ComponentStateMap, 
                 componentOutputMap : ComponentOutputMap, remoteFSMMap : RemoteFSMMap, 
-                errorBoundary : JSX.Element, hooks : any = {}) { 
+                errorBoundary : React.ReactElement<ErrorBoundaryProps>, hooks : Hooks = {}) { 
         this.id = id
         this.logger = logger
         this.componentStateMap = componentStateMap
         this.componentOutputMap = componentOutputMap
         this.remoteFSMMap = remoteFSMMap
         this.renderer = new RenderEngine(`${this.id}-renderer`, this.logger, this, 
-                                            componentStateMap, hooks["setGlobalLocation"], errorBoundary)
+                                            componentStateMap, hooks.setGlobalLocation!, errorBoundary)
         this.actionDispatcher = new ActionDispatcher(`${this.id}-action-dispatcher`, 
                                     new Logger(`${this.id}-action-dispatcher`, 'INFO'),
                                     this, componentOutputMap, remoteFSMMap,
@@ -450,7 +461,7 @@ export class StateManager {
     }
 
 
-    reset () {
+    reset() {
         this.actionDispatcher.reset()
         this.deleteActions()
         this.deleteComponents()
@@ -462,6 +473,23 @@ export class StateManager {
     }
 }
 
+
+export function createStateManager(id : string, logLevel : string = 'DEBUG', errorBoundary : React.ReactElement<ErrorBoundaryProps>, hooks : Hooks = {}) : StateManager {
+    const visualizationComponentStateMap : ComponentStateMap = {}
+    const visualizationComponentOutputMap : ComponentOutputMap = {}
+    const visualizationRemoteFSMMap : RemoteFSMMap = {}
+    const visualizationLogger = new Logger(`${id}-logger`, logLevel as loglevels)
+    const visualizationStateManager = new StateManager(
+        id, 
+        visualizationLogger, 
+        visualizationComponentStateMap, 
+        visualizationComponentOutputMap, 
+        visualizationRemoteFSMMap,
+        errorBoundary,
+        hooks
+    )
+    return visualizationStateManager
+}
 
 
 
@@ -530,7 +558,7 @@ export class ActionDispatcher {
             response : AxiosResponse
         }
     }
-    hooks : any
+    hooks : Hooks
 
     constructor(id : string, logger : Logger, stateManager : StateManager, componentOutputMap : ComponentOutputMap,
                     remoteFSMMap : RemoteFSMMap, hooks : any = {}) {
@@ -1056,7 +1084,7 @@ class SetGlobalLocation extends Action {
     
     call() {
         try {
-            this.actionDispatcher.hooks['setGlobalLocationHook'](this.path)
+            this.actionDispatcher.hooks.setGlobalLocation!(this.path)
         } catch(error : any) {
             this.log('ERROR', `could not set location to path ${this.path}`)
         }
@@ -1075,7 +1103,7 @@ class SetLocation extends Action {
     
     call() {
         try {
-            this.actionDispatcher.hooks['setLocationHook'](this.path)
+            this.actionDispatcher.hooks.setLocation!(this.path)
         } catch(error : any) {
             this.log('ERROR', `could not set (relative) location to path ${this.path}`)
         }
