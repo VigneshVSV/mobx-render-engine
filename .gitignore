@@ -10,6 +10,7 @@ old/
 presentation pics/
 doc/build
 doc/source/generated
+*.tgz
 
 # vs-code 
 .vscode/

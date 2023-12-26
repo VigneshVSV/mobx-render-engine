@@ -2,18 +2,14 @@
   "name": "mobx-render-engine",
   "version": "0.1.0",
   "description": "react component renderer based on mobx state management",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "package.json",
-    "README.md",
-    "license.txt"
-  ],
+  "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "clean-build": "rmdir dist /s && tsc",
-    "build": "tsc"
+    "clean": "rmdir dist /s /q",
+    "uninstall-node-modules": "rmdir node_modules /s /q",
+    "build": "tsc && robocopy . .\\dist package.json README.md LICENSE",
+    "pack" : "cd dist && npm pack . && cd .."
   },
   "repository": {
     "type": "git",
@@ -32,13 +28,15 @@
   "devDependencies": {
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
     "axios": "^1.6.2",
     "idb": "^8.0.0",
     "loglevel": "^1.8.1",
     "mobx": "^6.12.0",
     "mobx-react-lite": "^4.0.5",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "typescript": "^5.3.3"
+    "react-dom": "^18.2.0"
   }
 }
