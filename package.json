@@ -1,5 +1,5 @@
 {
-  "name": "mobx-render-engine",
+  "name": "@hololinked/mobx-render-engine",
   "version": "0.1.0",
   "description": "react component renderer based on mobx state management",
   "main": "index.js",
@@ -9,7 +9,8 @@
     "clean": "rmdir dist /s /q",
     "uninstall-node-modules": "rmdir node_modules /s /q",
     "build": "tsc && robocopy . .\\dist package.json README.md LICENSE",
-    "pack" : "cd dist && npm pack . && cd .."
+    "pack" : "cd dist && npm pack . && cd ..",
+    "publish": "cd dist && npm publish --access public && cd .."
   },
   "repository": {
     "type": "git",
@@ -17,7 +18,8 @@
   },
   "keywords": [
     "mobx",
-    "renderer"
+    "renderer",
+    "react"
   ],
   "author": "Vignesh Vaidyanathan",
   "license": "BSD-3-Clause",
