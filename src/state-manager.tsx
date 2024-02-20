@@ -32,8 +32,18 @@ type ErrorBoundaryProps = {
 }
 
 
+/** 
+ * Main object to manage application state for a single application, webpage or dashboard.
+ * It composes a renderer, an action dispatcher, a component state map and a component output map. 
+ * Use `createStateManager()` method to instantiate this object with default settings. 
+ * Call `updateComponents()` and `updateActions()` with [JSON specification](https://www.google.com) 
+ * to create component states and actions. The renderer will be then able to render such components. 
+ * Read [quickstart](https://www.google.com) or implementation of 
+ * [mui-mobx-render-engine](https://github.com/VigneshVSV/mui-render-engine) 
+ * or [hololinked-dashboard-components](https://github.com/VigneshVSV/hololinked-dashboard-components) for examples.
+ */
 export class StateManager {
-    
+
     _componentStateMap! : ComponentStateMap
     _componentOutputMap! : object 
     _remoteFSMMap! : RemoteFSMMap
@@ -44,6 +54,17 @@ export class StateManager {
     stubEvaluator : StubEvaluator
     stubResolver : any 
 
+    /**
+     * prefer `createStateManager()`
+     * @param id an id for the state manager, used for logging
+     * @param logger instance of mobx-render-enginer/utils/Logger
+     * @param componentStateMap - object (can be empty) 
+     * @param componentOutputMap - object (can be empty) 
+     * @param remoteFSMMap - object (can be empty) 
+     * @param errorBoundary - component rendered if there is an error (should accept 'message', 
+     *                      'submessage' and 'goBack' location router function)
+     * @param hooks - pass setLocation (relative), setGlobalLocation
+     */
     constructor(id : string, logger : Logger, componentStateMap : ComponentStateMap, 
                 componentOutputMap : ComponentOutputMap, remoteFSMMap : RemoteFSMMap, 
                 errorBoundary : React.ReactElement<ErrorBoundaryProps>, hooks : Hooks = {}) { 
@@ -63,6 +84,9 @@ export class StateManager {
         this.stubResolver  = this.stubEvaluator.resolveStubInfo.bind(this.stubEvaluator)
     }
 
+    /** 
+     * one time set object with key-value pairs of component html id and ComponentState 
+     */
     set componentStateMap(value : ComponentStateMap | null) {
         if(!value) 
             return
@@ -72,6 +96,10 @@ export class StateManager {
             this._componentStateMap = value
     }
 
+    /** 
+     * one time set object with key-value pairs of component html id and 
+     * its value (say for input elements like textfield, checkbox etc.) 
+     */
     set componentOutputMap(value : object | null) {
         if(!value) 
             return
@@ -81,6 +109,10 @@ export class StateManager {
             this._componentOutputMap = value
     }
 
+    /** 
+     * one time set object with key-value pairs of a hololinked.server.RemoteObject 
+     * and its state machine state. Not useful for applications outside hololinked. 
+     */
     set remoteFSMMap(value : RemoteFSMMap | null) {
         if(!value) 
             return 
@@ -102,19 +134,12 @@ export class StateManager {
         return this._remoteFSMMap
     }
 
-    get Renderer() {
-        return this.renderer
-    }
-
-    get StubEvaluator () {
-        return this.stubEvaluator
-    }
-
-    get StubResolver() {
-        return this.stubResolver
-    }
-    
-
+    /**
+     * creates component state from data, used updateComponents() when componentStateMap does not have a ComponentState
+     * for a specific html-id. 
+     * @param data - object containing the state data
+     * @returns ComponentState (implementor of makeObservable) or its child class
+     */
     createComponentState(data : ComponentData | PlotlyComponentData | VideoComponentData){
         if (data.componentName === '__App__' || this.renderer.isCapable(data.componentName)){
             switch(data.componentName) {
@@ -128,12 +153,17 @@ export class StateManager {
             throw new Error(`unknown component name : '${data.componentName}' - cannot create state container.`);
     }
 
-
-    resolveDynamicObj(data : { [key : string] : any }) : string[] {
+    /**
+     * @private
+     * finds the data providers for a dynamic prop, here resolve means 'find what provides it'
+     * @param data dynamic object data (contains fields op1, op1dtype, op1interpretation among others )
+     * @returns a list of providers (html ids of data providers and actions ids whose return value matter)
+     */
+    _resolveDynamicObj(data : { [key : string] : any }) : string[] {
         let providers : string[] = []
         // debugger
         if (data.op1interpretation === NESTED ) {
-            let providers_ = this.resolveDynamicObj(data.op1) 
+            let providers_ = this._resolveDynamicObj(data.op1) 
             providers.push(...providers_)
         }   
         else if (data.op1interpretation !== ACTION)  // RAW or ACTION_RESULT
@@ -142,7 +172,7 @@ export class StateManager {
         if (data.hasOwnProperty('op2') && data.hasOwnProperty('op2dtype') 
                 && data.hasOwnProperty('op2interpretation')) {
             if (data.op2interpretation === NESTED) {
-                let providers_ = this.resolveDynamicObj(data.op2) 
+                let providers_ = this._resolveDynamicObj(data.op2) 
                 providers.push(...providers_)
             }
             // we dont check ACTION like the previous if-else clause 
@@ -152,8 +182,16 @@ export class StateManager {
         }
         return providers
     }        
-    
-    getDynamicFieldsWithProvidersForGivenObject (data : { [key : string] : any }) : { providers_ : string[], dynamicFields_ : string[] } {
+
+    /**
+     * @private
+     * called for props, state machine and children objects to find props or children which
+     * are supposed to be dynamically generated from values of other components (for example, input components
+     * like checkbox and slider). calls _resolveDynamicObj internally. 
+     * @param data key-value pairs/object 
+     * @returns list of dynamic fields within that object and the providers of data for them. 
+     */
+    _getDynamicFieldsWithProvidersForGivenObject (data : { [key : string] : any }) : { providers_ : string[], dynamicFields_ : string[] } {
         let providers : string [] = []
         let dynamicFields : string[] = []
         if(Array.isArray(data)) {
@@ -163,12 +201,12 @@ export class StateManager {
                         if(obj.op1interpretation === ACTION)
                             obj = this.stubResolver(obj)
                         else {
-                            let providers_ = this.resolveDynamicObj(obj)
+                            let providers_ = this._resolveDynamicObj(obj)
                             providers.push(...providers_)
                         }
                     }
                     else  {
-                        let { providers_, dynamicFields_} = this.getDynamicFieldsWithProvidersForGivenObject(obj)
+                        let { providers_, dynamicFields_} = this._getDynamicFieldsWithProvidersForGivenObject(obj)
                         providers.push(...providers_)
                         dynamicFields.push(...dynamicFields_)
                     }
@@ -185,14 +223,14 @@ export class StateManager {
                         if(data[key].op1interpretation === ACTION) 
                             data[key] = this.stubResolver(data[key])
                         else {
-                            let providers_ = this.resolveDynamicObj(data[key])
+                            let providers_ = this._resolveDynamicObj(data[key])
                             providers.push(...providers_)
                             dynamicFields.push(key)
                         }
                     }
                     else {
                         // arrays and everything else reach here 
-                        let { providers_, dynamicFields_} = this.getDynamicFieldsWithProvidersForGivenObject(data[key])
+                        let { providers_, dynamicFields_} = this._getDynamicFieldsWithProvidersForGivenObject(data[key])
                         if(providers_.length > 0 && Array.isArray(data[key]))
                             dynamicFields.push(key)
                         providers.push(...providers_)
@@ -207,12 +245,20 @@ export class StateManager {
         }
     }
 
+
+    /**
+     * @private
+     * finds dynamicProps and dynamicChildren - props and children to be dynamically 
+     * generated from values of other components (for example, input components like checkbox and slider)
+     * @param componentData object containing component data
+     * @returns list of data providers for dynamicProps or dynamicChildren
+     */
     getDynamicDataProviders (componentData : ComponentData | PlotlyComponentData) : string[] {
         let providers : string[] = []
         
         if(componentData.props){
                 // debugger
-                let { providers_, dynamicFields_ } = this.getDynamicFieldsWithProvidersForGivenObject(componentData.props)
+                let { providers_, dynamicFields_ } = this._getDynamicFieldsWithProvidersForGivenObject(componentData.props)
                 providers.push(...providers_)
                 for (let dprop of dynamicFields_) {
                     if(!componentData.dynamicProps)
@@ -225,7 +271,7 @@ export class StateManager {
         if(componentData.children){
             let dynamicChildIndexToRemove : number[] = []
             for(let i=0; i < componentData.children.length; i++) {
-                let { providers_, dynamicFields_ } = this.getDynamicFieldsWithProvidersForGivenObject(componentData.children[i])
+                let { providers_, dynamicFields_ } = this._getDynamicFieldsWithProvidersForGivenObject(componentData.children[i])
                 providers.push(...providers_)
                 if(providers_.length > 0){
                     if(!componentData.dynamicChildren)
@@ -241,7 +287,7 @@ export class StateManager {
         
         if((componentData as PlotlyComponentData).sources){
             // debugger
-            let { providers_, dynamicFields_ } = this.getDynamicFieldsWithProvidersForGivenObject(
+            let { providers_, dynamicFields_ } = this._getDynamicFieldsWithProvidersForGivenObject(
                                             (componentData as PlotlyComponentData).sources)
             providers.push(...providers_)
         }
@@ -249,7 +295,7 @@ export class StateManager {
         if (componentData.stateMachine) {
             // debugger
             for(let state of Object.keys(componentData.stateMachine.states)){                 
-                let {providers_, dynamicFields_} = this.getDynamicFieldsWithProvidersForGivenObject(componentData.stateMachine.states[state])
+                let {providers_, dynamicFields_} = this._getDynamicFieldsWithProvidersForGivenObject(componentData.stateMachine.states[state])
                 providers.push(...providers_)
                 if(!componentData.stateMachine.states[state].props)
                     componentData.stateMachine.states[state].props = {}
@@ -276,8 +322,15 @@ export class StateManager {
         return providers
     }   
 
-
-    addOrModifyComponentState(id : string, state : ComponentData | PlotlyComponentData 
+    /**
+     * @private
+     * creates or modifies a ComponentState. calls setComponentData MobX action on ComponentState.
+     * @param id html-id of component for which a state has to be created or modified
+     * @param state object containing state information
+     * @param added a list into which html-id is added if created freshly (optional)
+     * @param reset a list into which html-id is added if component already existed (optional)
+     */
+    _addOrModifyComponentState(id : string, state : ComponentData | PlotlyComponentData 
                                 | VideoComponentData, added : string[] | null = null, reset : string[] | null = null){
         if (this._componentStateMap[id]) {
             this._componentStateMap[id].setComponentData(state)
@@ -303,6 +356,11 @@ export class StateManager {
         } 
     }
 
+    /**
+     * 
+     * @param data 
+     * @param callerID 
+     */
     updateComponents(data : any, callerID : string = '') {
         // debugger
         this.logger.drawLine()
@@ -353,18 +411,18 @@ export class StateManager {
         for(let key of Object.keys(data) ) {
             //always update App at the end because it should be the first consumer of the component state map 
             if (key !== "__App__" && key!== callerID) {
-                this.addOrModifyComponentState(key, data[key], added, reset)
+                this._addOrModifyComponentState(key, data[key], added, reset)
             }
         }   
         
         // Not sure, but I think it was observed that while updating the own component which made the request before
         // updating other components causes problems
         if(data.hasOwnProperty(callerID) && this._componentStateMap.hasOwnProperty(callerID)) {
-            this.addOrModifyComponentState(callerID, data[callerID], added, reset)             
+            this._addOrModifyComponentState(callerID, data[callerID], added, reset)             
         }
            
         if(data["__App__"]) {
-            this.addOrModifyComponentState("__App__", data["__App__"], added, reset)   
+            this._addOrModifyComponentState("__App__", data["__App__"], added, reset)   
         }
         
         this.logger.logStateMap      ("StateManager", this.id, "NEXT STATE           ", this._componentStateMap)
@@ -373,35 +431,29 @@ export class StateManager {
         this.logger.drawLine()
     }
 
-    async syncComponents(componentData : ComponentStateMap | null = null) {
-        throw new Error("Not implemented yet")
-        if(!componentData)
-        componentData = this._componentStateMap
-        await asyncRequest({
-            url : '',
-            data : componentData,
-            method : 'post'
-        }) 
+   
+    /**
+     * delete the component state map
+     */
+    deleteComponents() {
+        for(let key of Object.keys(this._componentStateMap))
+            delete this._componentStateMap[key]
     }
 
-    deleteComponents(sync : boolean = false) {
-        if(sync) {
-            let componentStateMap = this._componentStateMap // copy reference
-            requestAnimationFrame(() => this.syncComponents(componentStateMap))
-            this._componentStateMap = {}
-        }
-        else
-            for(let key of Object.keys(this._componentStateMap))
-                delete this._componentStateMap[key]
-    }
-
-
+    /**
+     * add all action JSON specifications to an internal map of stub evaluator which resolves it (the JSON stub
+     * or specification) into a function. call this method before calling updateComponents().
+     * @param data key-value pairs/object
+     */
     updateActions (data : ActionsMap) {
         this.logger.logData("StateManager", this.id, "ACTIONS (to be updated)", data)
         for(let key of Object.keys(data)) 
             this.stubEvaluator.actionStubsMap[key] = data[key]
     }
 
+    /**
+     * delete the internal actions map within stub evaluator
+     */
     deleteActions () {
         for(let key of Object.keys(this.stubEvaluator.actionStubsMap))
             delete this.stubEvaluator.actionStubsMap[key]

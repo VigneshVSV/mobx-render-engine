@@ -9,8 +9,9 @@
     "clean": "rmdir dist /s /q",
     "uninstall-node-modules": "rmdir node_modules /s /q",
     "build": "tsc && robocopy . .\\dist package.json README.md LICENSE",
-    "pack" : "cd dist && npm pack . && cd ..",
-    "publish": "cd dist && npm publish --access public && cd .."
+    "pack": "cd dist && npm pack . && cd ..",
+    "publish-package": "cd dist && npm publish --access public && cd ..",
+    "build-docs": "npx typedoc --options typedoc-config.json && robocopy docs\\. ..\\hololinked-website\\docs\\mobx-render-engine * /E"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,9 @@
   "devDependencies": {
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
+    "typedoc": "^0.25.4",
+    "typedoc-github-wiki-theme": "^1.1.0",
+    "typedoc-plugin-markdown": "^3.17.1",
     "typescript": "^5.3.3"
   },
   "dependencies": {

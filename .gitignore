@@ -6,10 +6,7 @@ __pycache__/
 # C extensions
 *.so
 # custom folders
-old/ 
-presentation pics/
-doc/build
-doc/source/generated
+docs/
 *.tgz
 
 # vs-code 

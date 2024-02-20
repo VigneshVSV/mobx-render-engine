@@ -8,19 +8,23 @@ import { Logger } from "./utils/logger";
 import { ComponentState } from "./state-container";
 
 
-
+/**
+ * Type for props of a component to be registered with render engine. All components 
+ * are passed these three props by the render engine along with a unique key.   
+ */ 
 export type RenderEngineComponentProps = {
     state : ComponentState
     renderer : RenderEngine
     logger : Logger  
 }
 
-export type RenderEnginePlotlyProps = {
-    state : PlotlyState
-    renderer : RenderEngine
-    logger : Logger  
-}
 
+/**
+ * Checks if supplied html-id has a defined component state and renders it with that 
+ * state if possible. RenderEngine keeps a map of allowed components which can be 
+ * registered using `registerComponent()`. For a given html-id, it retrives the component from the map, 
+ * and passes the MobX state while rendering. Additional errors while rendering can be shown using error boundary. 
+ */
 export class RenderEngine {
 
     id : string 
@@ -32,6 +36,16 @@ export class RenderEngine {
     errorBoundary : JSX.Element
     _stopRendering : boolean
     _lastError : string
+
+    /**
+     * Creates a new RenderEngine. For each application, normally one is sufficient. 
+     * @param id id of the render engine, used for logging
+     * @param logger instance of mobx-render-engine/utils/Logger or similar
+     * @param stateManager parent state manager that owns the render engine, automatically assigned when createStateManager is used
+     * @param componentStateMap html-id to ComponentState map
+     * @param setGlobalLocation gives error boundary a way to return to the calling page
+     * @param errorBoundary component that is displayed when error occured while rendering the components
+     */
 
     constructor(id : string, logger : Logger, stateManager : any, componentStateMap : ComponentStateMap, 
                     setGlobalLocation : (absolutePath : string) => void, errorBoundary : JSX.Element) {
@@ -46,6 +60,13 @@ export class RenderEngine {
         this._lastError = ''
     }
 
+    /**
+     * renders component specified by html-id. If state is not found, tries to render 
+     * it plain (like numbers, strings etc.). Stops rendering if encountered with 
+     * error while rendering. 
+     * @param id html-id of a specific component whose JSX needs to be returned
+     * @returns react node
+     */
     Component(id : string) : React.ReactNode {
         // debugger
         if(this._stopRendering)
@@ -66,6 +87,9 @@ export class RenderEngine {
                         <Component key={key} state={state} renderer={this} logger={this.logger} />
                     )    
                 } catch(error : any) {
+                    this._lastError = error.message
+                    this.logger.logErrorMessage("Renderer", this.id, this._lastError)
+                    this._stopRendering = true
                     return (
                         // @ts-ignore
                         <ErrorBoundary
@@ -93,16 +117,26 @@ export class RenderEngine {
         else
             // probably a raw string which is used in a textfield, render it blindly 
             if(id === '__App__') {
-                // @ts-ignore     
-                <ErrorBoundary
-                    message='could not resolve id __App__ although this should have been possible'
-                    subMessage='did you quit while loading a page from server in between? You need to reload the page from server'
-                    goBack={() => this.setGlobalLocation('/')}
-                />
+                this._stopRendering = true    
+                return (
+                    // @ts-ignore 
+                    <ErrorBoundary
+                        message='could not resolve id __App__ although this should have been possible'
+                        subMessage='did you quit while loading a page from server in between? You need to reload the page from server'
+                        goBack={() => this.setGlobalLocation('/')}
+                    />
+                )
             } 
-            return id
+            return id // plain render
     }
 
+    /**
+     * supply a new component to be made available for rendering
+     * @param name unqiue name
+     * @param component component
+     * @param replace replace when true if another component was registered with same name
+     * @throws if replace is false and a component was already registered with given name
+     */
     registerComponent(name : string, component : any, replace : boolean = false) {
         if(!this.components[name] || replace)
             this.components[name] = component
@@ -110,10 +144,20 @@ export class RenderEngine {
             throw new Error(`component with name ${name} already present in list of renderable components`)
     }
 
+    /**
+     * remove an existing renderable component
+     * @param name remove a registered component with given name. No effect when name does not exist 
+     */
     deregisterComponent(name : string) {
         if(this.components[name])
             delete this.components[name]
     }
+
+    /**
+     * 
+     * @param name check if a given name is already registered
+     * @returns true if capable
+     */
 
     isCapable(name : string) : boolean {
         if(this.components.hasOwnProperty(name)) 
@@ -121,7 +165,12 @@ export class RenderEngine {
         return false
     }
 
-    Children(children : string[] | null) {
+    /**
+     * render an array of components using the array of html-ids. Mainly useful for rendering children.
+     * @param children array of html-ids
+     * @returns array of react nodes within a react fragment
+     */
+    Children(children : string[] | null) : React.ReactNode {
         return (
             <>
                 {children? children.map((child : string) => this.Component(child)) : null}
@@ -131,7 +180,12 @@ export class RenderEngine {
 }
 
 
-
+console.log("%cMOBX RENDER ENGINE %c\n \
+To contribute visit:\n \
+https://github.com/VigneshVSV/mobx-render-engine\n \
+https://github.com/VigneshVSV/hololinked-dashboard-components\n \
+https://github.com/VigneshVSV/MUI-mobx-react-render-engine",
+"color:green; font-size: 50px", "color:red; font-size:15px" )
 
 
 
