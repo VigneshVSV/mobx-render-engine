@@ -11,30 +11,44 @@ export type GenericComponentProps = {
     [key : string] : any
 }
 
+
+/**
+ * Represents the data structure for a generic UI component within the state container.
+ *
+ * @property id - Unique identifier for the component.
+ * @property tree - Identifier for the component's tree or hierarchy.
+ * @property componentName - Name of the component type.
+ * @property props - Static properties passed to the component.
+ * @property dynamicProps - Properties whose values are dynamically resolved using stubs.
+ * @property dependentsExist - Indicates if the component has dependent components.
+ * @property dependents - List of dependent component IDs.
+ * @property stateMachine - Optional state machine specification for the component.
+ * @property children - Array of child components or elements.
+ * @property dynamicChildren - Array of dynamic children, resolved using stubs.
+ * @property metadata - Optional metadata for the component, such as layout or styling information.
+*/
 export type ComponentData = {
-    id              : string
-    tree            : string
-    componentName   : string
-    props           : { [key : string] : any }
-    dynamicProps    : { [key : string] : Stub }
-    dependentsExist : boolean
-    dependents      : string[]
-    stateMachine    : null | MachineSpec
-    children        : any[]
-    dynamicChildren : Stub[]
-    metadata?       : {
-        RGLDataGrid? : object
-        styling?  : object
-        [key : string] : any
-    } | null
-}
+    id: string;
+    tree: string;
+    componentName: string;
+    props: Record<string, any>;
+    dynamicProps: Record<string, Stub>;
+    dependentsExist: boolean;
+    dependents: string[];
+    stateMachine: MachineSpec | null;
+    children: any[];
+    dynamicChildren: Stub[];
+    metadata?: {
+        RGLDataGrid?: object;
+        styling?: object;
+        [key: string]: any;
+    } | null;
+};
 
 export type PlotlyComponentData = ComponentData & {
-    plot : string
-    sources : {
-        [key : string] : Stub
-    }
-}
+    plot: string;
+    sources: Record<string, Stub>;
+};
 
 export type VideoComponentData = ComponentData & {
     img : string | null
@@ -44,26 +58,49 @@ export type VideoComponentData = ComponentData & {
 
 
 
+/**
+ * Represents the state of a generic UI component, including its properties, children, and state machine.
+ * The state management is implemented using MobX for performance reactivity.
+ * An explanation of the properties:
+ * - `id`: Unique identifier for the component, identical to HTML id but additionally used to identify the component in a map containing all component states.
+ * - `tree`: Identifier for the component's tree or hierarchy i.e. A qualified id based on concatenated parent IDs to indicate whose children or sub children it is. 
+ * - `componentName`: Name of the component type e.g., `Button`, `TextInput`.
+ * - `props`: Static properties passed to the component (e.g., `label`, `color`).
+ * - `dynamicProps`: Properties whose values are to be either computed or dynamically resolved using stubs (e.g., `data` for a chart).
+ * - `dependentsExist`: Boolean indicating if the component has dependent components, i.e. a value associated with this component is used by other components.
+ *      For example, a button that changes the state of a chart or clears a text input.
+ * - `dependents`: List of dependent component IDs that rely on this component's state. The `dependentsExist` is a boolean flag.
+ * - `stateMachine`: Optional state machine specification for the component, and what props to be applied to the component in each state.
+ *     This is used to be tied to a state machine in a backend typically, but can also be used to define a state machine in the frontend and manipulated using other components. 
+ * - `children`: Array of child components or elements that this component contains.
+ * - `dynamicChildren`: Array of dynamic children, to be either computed or resolved using stubs, which may change in time.
+ * - `resolveStubInfo`: Function to resolve stub values to their actual values, used for dynamic properties and children. The stub has a specific custom definition on its own.
+ * - `metadata`: Optional metadata for the component, such as layout or styling information and its location in react grid layout. 
+*/
 export class ComponentState {
 
-    id!              : string
-    tree!            : string
-    componentName!   : string   
-    props!           : GenericComponentProps
-    dynamicProps!    : { [key : string] : Stub }
-    dependentsExist! : boolean
-    dependents!      : string[]
-    stateMachine!    : RemoteFSM
-    children!        : any[] | null
-    dynamicChildren! : Stub[] | null
-    resolveStubInfo  : (stub : Stub) => string | number | undefined | null | boolean
-    metadata!        : {
-                RGLDataGrid? : object
-                styling?  : object 
-                [key : string] : any
-            } 
-   
+    id!: string
+    tree!: string
+    componentName!: string   
+    props!: GenericComponentProps
+    dynamicProps!: { [key: string]: Stub }
+    dependentsExist!: boolean
+    dependents!: string[]
+    stateMachine!: RemoteFSM
+    children!: any[] | null
+    dynamicChildren!: Stub[] | null
+    resolveStubInfo!: (stub: Stub) => string | number | undefined | null | boolean
+    metadata!: {
+        RGLDataGrid?: object
+        styling?: object
+        [key: string]: any
+    };
 
+    /**
+     * Constructor for the ComponentState class.
+     * @param {ComponentData} componentData The data for the component, including its id, tree, componentName, props, metadata, etc.
+     * @param {StubResolver} stubResolver The function to resolve stub values to their actual values. This is typically a function that takes a stub and returns its resolved value.
+     */
     constructor(componentData : ComponentData, stubResolver : any) {
 
         this.metadata = {}
@@ -76,16 +113,16 @@ export class ComponentState {
             this.setComponentData(componentData)
 
         makeObservable(this, {           
-            props               : observable,
-            dynamicProps        : observable,
-            children            : observable,
-            dynamicChildren     : observable,
-            metadata            : observable,
-            computedProps       : computed,
-            computedChildren    : computed, // allows re-rendering of children separately
-            updateComponentData : action,
-            forceUpdate         : action,
-            setRGLDataGrid         : action
+            props: observable,
+            dynamicProps: observable,
+            children: observable,
+            dynamicChildren: observable,
+            metadata: observable,
+            computedProps: computed,
+            computedChildren: computed, // allows re-rendering of children separately
+            updateComponentData: action,
+            forceUpdate: action,
+            setRGLDataGrid: action
             // something missing?
         })
     }

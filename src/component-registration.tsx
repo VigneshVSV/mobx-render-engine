@@ -1,7 +1,7 @@
 import { ContextfulApp } from "./components/app"
 import { ContextfulPage } from "./components/page"
-import { RenderEngine } from "./index"
-import { StateManager } from "./state-manager"
+import { RenderEngine } from "./render-engine"
+import { StateManager } from "."
 
 
 export function prepareRenderers(renderers : RenderEngine[]) {

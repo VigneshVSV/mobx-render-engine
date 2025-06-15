@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite"
 // Custom functional libraries
 // Internal & 3rd party component libraries
 // Custom component libraries
-import { RenderEngineComponentProps } from "../index"
+import { RenderEngineComponentProps } from "../render-engine"
 
 
 
