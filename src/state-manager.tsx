@@ -65,22 +65,42 @@ export class StateManager {
      *                      'submessage' and 'goBack' location router function)
      * @param hooks - pass setLocation (relative), setGlobalLocation
      */
-    constructor(id : string, logger : Logger, componentStateMap : ComponentStateMap, 
-                componentOutputMap : ComponentOutputMap, remoteFSMMap : RemoteFSMMap, 
-                errorBoundary : React.ReactElement<ErrorBoundaryProps>, hooks : Hooks = {}) { 
+    constructor(
+        id: string,
+        logger: Logger | null = null,
+        componentStateMap: ComponentStateMap | null = null,
+        componentOutputMap: ComponentOutputMap | null = null,
+        remoteFSMMap: RemoteFSMMap | null = null,
+        errorBoundary: React.ReactElement<ErrorBoundaryProps> | null = null,
+        hooks: Hooks = {}
+    ) {
         this.id = id
-        this.logger = logger
-        this.componentStateMap = componentStateMap
-        this.componentOutputMap = componentOutputMap
-        this.remoteFSMMap = remoteFSMMap
-        this.renderer = new RenderEngine(`${this.id}-renderer`, this.logger, this, 
-                                            componentStateMap, hooks.setGlobalLocation!, errorBoundary)
-        this.actionDispatcher = new ActionDispatcher(`${this.id}-action-dispatcher`, 
-                                    new Logger(`${this.id}-action-dispatcher`, 'INFO'),
-                                    this, componentOutputMap, remoteFSMMap,
-                                    hooks)
-        this.stubEvaluator = new StubEvaluator(`${this.id}-stub-evaluator`, this.actionDispatcher.logger, 
-                                        componentOutputMap, this.actionDispatcher)
+        this.logger = logger || new Logger(`${this.id}-logger`, 'INFO')
+        this.componentStateMap = componentStateMap || {}
+        this.componentOutputMap = componentOutputMap || {}
+        this.remoteFSMMap = remoteFSMMap || {}
+        this.renderer = new RenderEngine(
+            `${this.id}-renderer`,
+            this.logger,
+            this,
+            this.componentStateMap,
+            hooks.setGlobalLocation,
+            errorBoundary
+        );
+        this.actionDispatcher = new ActionDispatcher(
+            `${this.id}-action-dispatcher`,
+            new Logger(`${this.id}-action-dispatcher`, 'INFO'),
+            this,
+            this.componentOutputMap,
+            this.remoteFSMMap,
+            hooks
+        );
+        this.stubEvaluator = new StubEvaluator(
+            `${this.id}-stub-evaluator`,
+            this.actionDispatcher.logger,
+            this.componentOutputMap,
+            this.actionDispatcher
+        );
         this.stubResolver  = this.stubEvaluator.resolveStubInfo.bind(this.stubEvaluator)
     }
 
