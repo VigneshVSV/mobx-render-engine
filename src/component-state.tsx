@@ -76,7 +76,7 @@ export type VideoComponentData = ComponentData & {
  * - `dynamicChildren`: Array of dynamic children, to be either computed or resolved using stubs, which may change in time.
  * - `resolveStubInfo`: Function to resolve stub values to their actual values, used for dynamic properties and children. The stub has a specific custom definition on its own.
  * - `metadata`: Optional metadata for the component, such as layout or styling information and its location in react grid layout. 
-*/
+ */
 export class ComponentState {
 
     id!: string

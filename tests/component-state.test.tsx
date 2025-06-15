@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { ComponentState } from '../src/state-container';
+import { ComponentState } from '../src/component-state';
 import { StateManager } from '../src';
 
 

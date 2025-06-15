@@ -3,9 +3,9 @@ import React from "react";
 // Custom functional libraries
 // Internal & 3rd party component libraries
 // Custom component libraries
-import { ComponentStateMap, PlotlyState } from "./state-container";
+import { ComponentStateMap, PlotlyState } from "./component-state";
 import { Logger } from "./utils/logger";
-import { ComponentState } from "./state-container";
+import { ComponentState } from "./component-state";
 
 
 /**

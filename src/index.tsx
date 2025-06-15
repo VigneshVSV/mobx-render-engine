@@ -2,7 +2,7 @@
 import axios, { AxiosPromise, AxiosRequestConfig, AxiosResponse } from "axios";
 // Custom functional libraries
 import { ComponentData, ComponentState, ComponentStateMap, PlotlyComponentData, VideoComponentData, 
-    PlotlyState, VideoComponentState, PageState } from "./state-container"
+    PlotlyState, VideoComponentState, PageState } from "./component-state"
 import { RemoteFSMMap } from "./state-machine"
 import { ACTION, NESTED, ActionsMap, ComponentOutputMap, StubEvaluator, Stub } from "./stub-evaluator"
 import { RenderEngine } from "./render-engine"
@@ -56,13 +56,13 @@ export class StateManager {
 
     /**
     * Prefer using the `createStateManager()` factory function to instantiate this class.
-    *
     * @param {string} id - An identifier for the state manager, used for logging.
     * @param {Logger | null} [logger=null] - Instance of `mobx-render-engine/utils/Logger`.
     * @param {ComponentStateMap | null} [componentStateMap=null] - Initial map of component states.
     * @param {ComponentOutputMap | null} [componentOutputMap=null] - Initial map of component outputs.
     * @param {RemoteFSMMap | null} [remoteFSMMap=null] - Initial map of remote FSMs.
-    * @param {React.ReactElement<ErrorBoundaryProps> | null} [errorBoundary=null] - Component rendered if there is an error (should accept 'message', 'subMessage', and 'goBack' location router function).
+    * @param {React.ReactElement<ErrorBoundaryProps> | null} [errorBoundary=null] - Component rendered if there is an error 
+    * (should accept 'message', 'subMessage', and 'goBack' location router function).
     * @param {Hooks} [hooks={}] - Optional hooks, such as `setLocation` (relative) and `setGlobalLocation`.
     */
     constructor(
@@ -143,17 +143,64 @@ export class StateManager {
             this._remoteFSMMap = value
     }
 
+    /**
+     * Get the component state map.
+     * @returns {ComponentStateMap} The component state map.
+     */
     get componentStateMap() : ComponentStateMap {
         return this._componentStateMap
     }
+
+    /**
+     * Get the component output map.
+     * @returns {ComponentOutputMap} The component output map.
+     */
 
     get componentOutputMap() : ComponentOutputMap {
         return this._componentOutputMap
     }
 
+    /**
+     * Get the remote FSM map.
+     * @returns {RemoteFSMMap} The remote FSM map.
+     */
     get remoteFSMMap() : RemoteFSMMap {
         return this._remoteFSMMap
     }
+
+
+    /**
+     * delete the component state map
+     */
+    deleteComponents() {
+        for(let key of Object.keys(this._componentStateMap))
+            delete this._componentStateMap[key]
+    }
+
+
+    /**
+     * delete the internal actions map within stub evaluator
+     */
+    deleteActions () {
+        for(let key of Object.keys(this.stubEvaluator.actionStubsMap))
+            delete this.stubEvaluator.actionStubsMap[key]
+    }
+
+
+    /**
+     * Reset the state manager to its initial state.
+     */
+    reset() {
+        this.actionDispatcher.reset()
+        this.deleteActions()
+        this.deleteComponents()
+        this._componentOutputMap = {}
+        this._componentStateMap = {}
+        this._remoteFSMMap = {}
+        this.logger.clearLogs()
+        console.info("reset state manager with id - ", this.id)
+    }
+
 
     /**
      * creates component state from data, used by updateComponents() when componentStateMap does not have a ComponentState
@@ -378,7 +425,8 @@ export class StateManager {
     }
 
     /**
-     * 
+     * @deprecated This method is considered stale and may be modified in future versions. 
+     * Its used to update state of components from a backend which may still work correctly.
      * @param data 
      * @param callerID 
      */
@@ -452,14 +500,6 @@ export class StateManager {
         this.logger.drawLine()
     }
 
-   
-    /**
-     * delete the component state map
-     */
-    deleteComponents() {
-        for(let key of Object.keys(this._componentStateMap))
-            delete this._componentStateMap[key]
-    }
 
     /**
      * add all action JSON specifications to an internal map of stub evaluator which resolves it (the JSON stub
@@ -472,14 +512,7 @@ export class StateManager {
             this.stubEvaluator.actionStubsMap[key] = data[key]
     }
 
-    /**
-     * delete the internal actions map within stub evaluator
-     */
-    deleteActions () {
-        for(let key of Object.keys(this.stubEvaluator.actionStubsMap))
-            delete this.stubEvaluator.actionStubsMap[key]
-    }
-
+   
     get resolvedActions () : Action[] {
         let actions : Action[] = []
         for(let key of Object.keys(this.stubEvaluator.actionStubsMap)){
@@ -503,9 +536,16 @@ export class StateManager {
                     this._componentStateMap[dependents[i]].forceUpdate()
             }
         }
-    }
+    }   
 
 
+    /**
+     * Store the current state of the components and actions to the browser's local database or a remote database
+     * @param server 
+     * @param components 
+     * @param actions 
+     * @param storeAsLastUsed 
+     */
     store (server : string, components : any, actions : any, storeAsLastUsed : boolean = true) {
         let clonedActions = structuredClone(actions)
         let clonedComponents = structuredClone(components)
@@ -531,18 +571,6 @@ export class StateManager {
             this.updateActions(data.actions)
             this.updateComponents(data.components)
         }
-    }
-
-
-    reset() {
-        this.actionDispatcher.reset()
-        this.deleteActions()
-        this.deleteComponents()
-        this._componentOutputMap = {}
-        this._componentStateMap = {}
-        this._remoteFSMMap = {}
-        this.logger.clearLogs()
-        console.debug("reset state manager with id - ", this.id)
     }
 }
 
